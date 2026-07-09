@@ -1,0 +1,690 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>tini tts</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%2360a5fa'/%3E%3Cstop offset='100%25' stop-color='%232563eb'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='18' fill='%23f8fbff'/%3E%3Crect x='6' y='6' width='52' height='52' rx='16' fill='url(%23g)' opacity='.14'/%3E%3Cg stroke='url(%23g)' stroke-width='4' stroke-linecap='round'%3E%3Cpath d='M16 32h3'/%3E%3Cpath d='M24 22v20'/%3E%3Cpath d='M32 16v32'/%3E%3Cpath d='M40 22v20'/%3E%3Cpath d='M48 27v10'/%3E%3C/g%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#f7f8fb;
+  --bg-accent:#eef4ff;
+  --surface:rgba(255,255,255,.88);
+  --surface-solid:#fff;
+  --ink:#1f2937;
+  --muted:#6b7280;
+  --line:rgba(31,41,55,.11);
+  --line-strong:rgba(59,130,246,.38);
+  --primary:#3b82f6;
+  --primary-2:#2563eb;
+  --shadow:0 24px 70px rgba(148,163,184,.18);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  color:var(--ink);
+  font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at top center, rgba(59,130,246,.12), transparent 36%),
+    radial-gradient(circle at left 20% top 30%, rgba(255,255,255,.9), transparent 28%),
+    linear-gradient(180deg, #fcfdff 0%, var(--bg) 58%, #f3f6fb 100%);
+}
+body.theme-night{
+  --bg:#08111f;
+  --bg-accent:#132038;
+  --surface:rgba(11,21,39,.82);
+  --surface-solid:#0d1728;
+  --ink:#edf2ff;
+  --muted:#9aa7bf;
+  --line:rgba(148,163,184,.2);
+  --line-strong:rgba(96,165,250,.55);
+  --primary:#60a5fa;
+  --primary-2:#3b82f6;
+  --shadow:0 28px 80px rgba(2,6,23,.42);
+  background:
+    radial-gradient(circle at top center, rgba(59,130,246,.16), transparent 34%),
+    radial-gradient(circle at left 18% top 26%, rgba(37,99,235,.16), transparent 24%),
+    linear-gradient(180deg, #0b1220 0%, #08111f 58%, #091526 100%);
+}
+button,input,select,textarea{font:inherit}
+button,select,input,textarea{outline:none}
+.shell{max-width:1320px;height:100svh;margin:0 auto;display:flex;flex-direction:column}
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 28px;border-bottom:1px solid var(--line);flex:0 0 auto;
+}
+.brand{display:flex;align-items:center;gap:14px;font-weight:780;font-size:28px;letter-spacing:-.03em}
+.brand-mark{
+  width:36px;height:36px;border-radius:12px;display:grid;place-items:center;
+  background:linear-gradient(135deg, rgba(59,130,246,.16), rgba(37,99,235,.04));
+  color:var(--primary);
+}
+.brand-mark svg{width:22px;height:22px}
+.top-actions{display:flex;align-items:center;gap:14px}
+.ghost-btn,.icon-btn{
+  border:1px solid var(--line);background:rgba(255,255,255,.52);color:var(--ink);
+  box-shadow:0 12px 30px rgba(148,163,184,.08);
+}
+.theme-night .ghost-btn,.theme-night .icon-btn{background:rgba(13,23,40,.72)}
+.ghost-btn{
+  border-radius:18px;padding:14px 22px;font-weight:600;cursor:pointer;
+}
+.icon-btn{
+  width:54px;height:54px;border-radius:999px;display:grid;place-items:center;cursor:pointer;
+}
+.icon-btn svg{width:22px;height:22px}
+.hero{padding:14px 28px 72px;flex:1;display:flex;flex-direction:column;min-height:0}
+.hero-copy{text-align:center;max-width:900px;margin:0 auto 10px;flex:0 0 auto}
+.hero-copy h1{
+  margin:0;
+  font-size:clamp(42px,5vw,72px);
+  line-height:.92;
+  letter-spacing:-.06em;
+  font-weight:820;
+}
+.hero-copy .accent{color:var(--primary)}
+.hero-copy p{
+  margin:10px auto 0;max-width:700px;font-size:clamp(16px,1.45vw,22px);
+  line-height:1.35;color:var(--muted);
+}
+.panel{
+  max-width:1120px;margin:0 auto;padding:18px 22px;border:1px solid var(--line);
+  background:var(--surface);backdrop-filter:blur(22px);border-radius:28px;box-shadow:var(--shadow);flex:0 0 auto;
+}
+.panel-status{
+  margin:0 0 10px;padding:10px 14px;border:1px solid var(--line);border-radius:16px;
+  background:rgba(255,255,255,.56)
+}
+.theme-night .panel-status{background:rgba(13,23,40,.52)}
+.controls-grid{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(300px,.95fr);gap:22px}
+.field-label{
+  display:block;margin:0 0 16px;font-size:15px;font-weight:700;letter-spacing:.04em;
+  text-transform:uppercase;color:#64748b;
+}
+.theme-night .field-label{color:#9fb0cc}
+.voice-strip{display:flex;flex-wrap:wrap;gap:10px}
+.voice-pill{
+  min-width:108px;padding:10px 14px;border-radius:999px;border:1px solid var(--line);
+  background:var(--surface-solid);color:var(--muted);display:flex;align-items:center;justify-content:flex-start;gap:10px;
+  cursor:pointer;transition:.18s ease;box-shadow:0 10px 24px rgba(148,163,184,.08);
+}
+.theme-night .voice-pill{box-shadow:none}
+.voice-pill:hover{transform:translateY(-1px);border-color:var(--line-strong);color:var(--ink)}
+.voice-pill.active{
+  border-color:var(--primary);color:var(--primary);
+  box-shadow:0 0 0 4px rgba(59,130,246,.1), 0 14px 30px rgba(59,130,246,.18);
+}
+.voice-pill svg{width:18px;height:18px;flex:0 0 auto}
+.voice-copy{display:flex;flex-direction:column;align-items:flex-start;gap:1px}
+.voice-pill strong{font-size:13px;line-height:1.1}
+.voice-pill span{font-size:11px;line-height:1.1;color:var(--muted)}
+.voice-pill.active span{color:currentColor}
+.voice-pill .voice-glyph{stroke:currentColor}
+.select-wrap,.text-wrap,.slider-wrap,.hint-box,.player-shell{
+  border:1px solid var(--line);background:var(--surface-solid);border-radius:18px;
+}
+.select-wrap{
+  display:flex;align-items:center;gap:12px;padding:0 16px;min-height:56px;
+}
+.select-wrap span{display:grid;place-items:center;color:var(--muted)}
+.select-wrap select{
+  width:100%;border:0;background:transparent;color:var(--ink);font-size:17px;appearance:none;
+}
+.text-wrap{padding:0 16px 10px}
+textarea{
+  width:100%;min-height:108px;max-height:108px;padding:12px 0 8px;border:0;resize:none;background:transparent;
+  color:var(--ink);font-size:17px;line-height:1.45;
+}
+textarea::placeholder{color:#94a3b8}
+.counter{text-align:right;font-size:14px;color:var(--muted)}
+.range-row{display:flex;align-items:center;justify-content:space-between;margin:0 0 8px;color:var(--muted);font-size:14px}
+.range-row strong{color:var(--primary);font-size:18px}
+.slider-wrap{padding:16px}
+input[type=range]{
+  width:100%;margin:0;background:transparent;appearance:none
+}
+input[type=range]::-webkit-slider-runnable-track{
+  height:6px;border-radius:999px;background:linear-gradient(90deg, var(--primary) 0%, var(--primary) var(--range-fill,50%), #dbe4f0 var(--range-fill,50%), #dbe4f0 100%);
+}
+input[type=range]::-moz-range-track{
+  height:6px;border-radius:999px;background:#dbe4f0
+}
+input[type=range]::-webkit-slider-thumb{
+  appearance:none;width:24px;height:24px;border-radius:50%;background:#fff;border:1px solid rgba(59,130,246,.2);
+  box-shadow:0 8px 20px rgba(59,130,246,.24);margin-top:-9px
+}
+input[type=range]::-moz-range-thumb{
+  width:24px;height:24px;border-radius:50%;background:#fff;border:1px solid rgba(59,130,246,.2);box-shadow:0 8px 20px rgba(59,130,246,.24)
+}
+.hint-box{
+  padding:12px 14px;display:flex;gap:12px;color:var(--muted);font-size:15px;line-height:1.35
+}
+.hint-box svg{width:22px;height:22px;flex:0 0 auto;color:#64748b}
+.cta-row{display:flex;justify-content:center;margin-top:14px;margin-bottom:28px}
+.generate-btn{
+  min-width:min(100%,440px);border:0;border-radius:999px;padding:16px 24px;
+  color:#fff;background:linear-gradient(90deg, var(--primary), var(--primary-2));
+  font-size:28px;font-weight:700;letter-spacing:-.03em;cursor:pointer;box-shadow:0 24px 40px rgba(59,130,246,.26);
+}
+.generate-btn:disabled{opacity:.62;cursor:default}
+.status{
+  margin:0;max-width:none;text-align:left;white-space:pre-wrap;
+  color:var(--muted);font-size:13px;line-height:1.45
+}
+.status .ok{color:#16a34a}.status .warn{color:#dc2626}
+.panel-foot{
+  margin-top:10px;display:flex;align-items:center;justify-content:center;gap:8px;
+  color:var(--muted);font-size:13px
+}
+.panel-foot svg{width:16px;height:16px}
+.audio-dock{
+  position:fixed;left:50%;bottom:-6px;transform:translateX(-50%) translateY(120%);
+  width:calc(100vw - 24px);z-index:30;pointer-events:none;opacity:0;
+  transition:transform .28s ease,opacity .28s ease;
+}
+.audio-dock.ready{
+  transform:translateX(-50%) translateY(0);opacity:1;pointer-events:auto;
+}
+.player-shell{
+  padding:18px 20px;border:1px solid var(--line);background:rgba(255,255,255,.96);
+  backdrop-filter:blur(22px);border-radius:0;box-shadow:0 18px 42px rgba(148,163,184,.16)
+}
+.theme-night .player-shell{background:rgba(13,23,40,.88)}
+.audio-el{display:none}
+.player-layout{display:grid;grid-template-columns:220px 1fr;align-items:center;gap:20px}
+.player-meta strong{display:block;font-size:18px;line-height:1.2}
+.player-meta span{display:block;margin-top:6px;font-size:14px;color:var(--muted)}
+.player-core{display:flex;flex-direction:column;align-items:center;gap:10px}
+.player-controls{display:flex;align-items:center;gap:18px}
+.transport-btn,.reaction-btn,.share-btn,.chev-btn{
+  border:0;background:transparent;color:var(--ink);cursor:pointer
+}
+.transport-btn,.reaction-btn,.chev-btn{padding:0;display:grid;place-items:center}
+.jump-btn{font-size:14px;font-weight:700;width:28px;height:28px}
+.play-btn{
+  width:68px;height:68px;border-radius:999px;background:#111;color:#fff;
+  box-shadow:0 10px 24px rgba(15,23,42,.18)
+}
+.play-btn svg{width:24px;height:24px;margin-left:2px}
+.theme-night .play-btn{background:#fff;color:#111}
+.player-progress{display:grid;grid-template-columns:56px 1fr 56px;align-items:center;gap:16px;width:100%}
+.time-label{font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums}
+.seek{
+  width:100%;appearance:none;background:transparent;margin:0
+}
+.seek::-webkit-slider-runnable-track{
+  height:6px;border-radius:999px;background:linear-gradient(90deg, #111 0%, #111 var(--seek-fill,0%), #d1d5db var(--seek-fill,0%), #d1d5db 100%)
+}
+.theme-night .seek::-webkit-slider-runnable-track{
+  background:linear-gradient(90deg, #fff 0%, #fff var(--seek-fill,0%), rgba(148,163,184,.35) var(--seek-fill,0%), rgba(148,163,184,.35) 100%)
+}
+.seek::-moz-range-track{height:6px;border-radius:999px;background:#d1d5db}
+.seek::-webkit-slider-thumb{
+  appearance:none;width:18px;height:18px;border-radius:999px;background:#fff;border:2px solid #111;margin-top:-6px;box-shadow:0 4px 12px rgba(15,23,42,.15)
+}
+.seek::-moz-range-thumb{
+  width:18px;height:18px;border-radius:999px;background:#fff;border:2px solid #111;box-shadow:0 4px 12px rgba(15,23,42,.15)
+}
+.theme-night .seek::-webkit-slider-thumb,.theme-night .seek::-moz-range-thumb{border-color:#fff;background:#08111f}
+.jump-btn svg{width:22px;height:22px}
+.sr-only,.hidden-select{position:absolute!important;left:-9999px!important;width:1px!important;height:1px!important;overflow:hidden!important}
+@media (max-width:980px){
+  body{overflow:auto}
+  .shell{height:auto;min-height:100svh}
+  .topbar{padding:18px 18px}
+  .hero{padding:24px 18px 36px;display:block}
+  .panel{padding:22px;border-radius:24px}
+  .panel-status{margin-bottom:16px}
+  .controls-grid{grid-template-columns:1fr}
+  textarea{min-height:160px;max-height:none;resize:vertical}
+  .audio-dock{position:sticky;left:auto;bottom:12px;transform:none;width:calc(100vw - 24px);margin:16px auto 0;opacity:1;pointer-events:auto}
+  .audio-dock.ready{transform:none}
+  .player-layout{grid-template-columns:1fr;gap:14px}
+  .player-meta{text-align:center}
+}
+@media (max-width:720px){
+  .brand{font-size:24px}
+  .brand-mark{width:36px;height:36px}
+  .ghost-btn{padding:12px 18px}
+  .icon-btn{width:48px;height:48px}
+  .hero-copy h1{font-size:clamp(42px,15vw,62px)}
+  .hero-copy p{font-size:18px}
+  .voice-strip{gap:10px}
+  .voice-pill{min-width:96px;padding:9px 12px}
+  .generate-btn{font-size:26px;padding:18px 22px}
+  .player-shell{padding:16px 14px}
+  .player-controls{gap:14px}
+  .play-btn{width:58px;height:58px}
+  .player-progress{grid-template-columns:48px 1fr 48px;gap:10px}
+  .panel-foot{font-size:12px}
+}
+</style></head><body>
+<div class="shell">
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M4 12h1.6M7.5 8v8M11 5v14M14.5 8v8M18 10.5v3M20.5 7v10" class="voice-wave" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <span>tini tts</span>
+    </div>
+    <div class="top-actions">
+      <button id="aboutBtn" class="ghost-btn" type="button">About</button>
+      <button id="themeBtn" class="icon-btn" type="button" aria-label="Toggle theme">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+          <circle cx="12" cy="12" r="4.2"></circle>
+          <path d="M12 2.6v2.1M12 19.3v2.1M21.4 12h-2.1M4.7 12H2.6M18.65 5.35l-1.48 1.48M6.83 17.17l-1.48 1.48M18.65 18.65l-1.48-1.48M6.83 6.83 5.35 5.35"></path>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <main class="hero">
+    <section class="hero-copy">
+      <h1><span class="accent">tiny</span> tts model.<br>Fast, local, <span class="accent">expressive.</span></h1>
+      <p>A compact on-device English text-to-speech model with voice selection and emotion control, running fully in your browser with WebGPU.</p>
+    </section>
+
+    <section class="panel">
+      <div class="panel-status">
+        <div class="status" id="status"><span class="ok">Booting tiny tts...</span> Warming up WebGPU, loading voices, and preparing the model.</div>
+      </div>
+      <div class="controls-grid">
+        <div>
+          <label class="field-label" for="voice">Voice</label>
+          <div id="voiceList" class="voice-strip" aria-label="Voice choices"></div>
+          <select id="voice" class="hidden-select" aria-hidden="true"></select>
+          <select id="sent" class="hidden-select" aria-hidden="true"></select>
+
+          <label class="field-label" for="ctext" style="margin-top:28px">Text</label>
+          <div class="text-wrap">
+            <textarea id="ctext" maxlength="500" placeholder="Type something vivid. tiny tts will turn it into speech...">a small text to speech model runs locally in your browser and turns text into expressive speech.</textarea>
+            <div class="counter"><span id="charCount">0</span> / 500</div>
+          </div>
+        </div>
+
+        <div>
+          <label class="field-label" for="emo">Emotion</label>
+          <div class="select-wrap">
+            <span aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8">
+                <circle cx="12" cy="12" r="8.5"></circle><path d="M9 10h.01M15 10h.01"></path><path d="M8.5 14.3c1.2 1.3 2.35 1.95 3.5 1.95s2.3-.65 3.5-1.95"></path>
+              </svg>
+            </span>
+            <select id="emo"></select>
+          </div>
+
+          <label class="field-label" for="intensity" style="margin-top:28px">Intensity</label>
+          <div class="slider-wrap">
+            <div class="range-row"><span>0%</span><span>100%</span><strong id="ival">50%</strong></div>
+            <input id="intensity" type="range" min="0" max="4" step="0.5" value="2">
+          </div>
+
+          <div class="hint-box" style="margin-top:18px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <circle cx="12" cy="12" r="9"></circle><path d="M12 10v5"></path><path d="M12 7.2h.01"></path>
+            </svg>
+            <div>Emotion shapes how your voice feels. Try different emotions and intensity levels.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cta-row">
+        <button id="go" class="generate-btn" type="button" disabled>Loading model...</button>
+      </div>
+      <div class="panel-foot">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="6" y="10" width="12" height="10" rx="2"></rect><path d="M8.5 10V7.8A3.5 3.5 0 0 1 12 4.3a3.5 3.5 0 0 1 3.5 3.5V10"></path></svg>
+        <span>Runs entirely in your browser. Private &amp; secure.</span>
+      </div>
+    </section>
+
+    <section id="audioDock" class="audio-dock">
+      <div class="player-shell">
+        <div class="player-layout">
+          <div class="player-meta">
+            <strong id="playerTitle">Untitled</strong>
+            <span id="playerSubtitle">Generation 1</span>
+          </div>
+          <div class="player-core">
+            <div class="player-controls">
+              <button id="back10Btn" class="transport-btn jump-btn" type="button" aria-label="Back 10 seconds">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 8 6 12l4 4"/><path d="M20 18a8 8 0 1 0-2.34 5.66"/><path d="M10 4v4h4"/><path d="M11.5 14.5v-4l-1 .8"/><path d="M14.5 10.5h2v4"/></svg>
+              </button>
+              <button id="playBtn" class="transport-btn play-btn" type="button" aria-label="Play audio">
+                <svg id="playIcon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 6.5v11l9-5.5z"/></svg>
+              </button>
+              <button id="forward10Btn" class="transport-btn jump-btn" type="button" aria-label="Forward 10 seconds">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m14 8 4 4-4 4"/><path d="M4 18a8 8 0 1 1 2.34 5.66"/><path d="M14 4v4h-4"/><path d="M9.5 14.5v-4l-1 .8"/><path d="M12.5 10.5h2v4"/></svg>
+              </button>
+            </div>
+            <div class="player-progress">
+              <span id="currentTime" class="time-label">0:00</span>
+              <input id="seek" class="seek" type="range" min="0" max="100" step="0.1" value="0" aria-label="Seek audio">
+              <span id="duration" class="time-label">0:00</span>
+            </div>
+          </div>
+        </div>
+        <audio id="audio" class="audio-el"></audio>
+      </div>
+    </section>
+  </main>
+</div>
+<script type="module">
+import * as ort from 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.webgpu.min.mjs';
+import { loadG2P, g2pJS } from './g2p.js';
+const $=id=>document.getElementById(id);
+const setS=(h)=>{$('status').innerHTML=h;};
+let A=null, S={};
+const N=1920, H=480, FB=961;
+let TC=null,TS=null,WIN=null;
+let generationCount=0;
+
+function genderMeta(name){
+  if(name.startsWith('F')){
+    return {
+      label:'Female',
+      icon:`<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="8.5" r="4.5" class="voice-glyph" stroke="currentColor" stroke-width="1.9"/><path d="M12 13v7M9 17h6" class="voice-glyph" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>`
+    };
+  }
+  return {
+    label:'Male',
+    icon:`<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="10" cy="14" r="4.5" class="voice-glyph" stroke="currentColor" stroke-width="1.9"/><path d="M13.5 10.5 19 5M15.4 5H19v3.6" class="voice-glyph" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+  };
+}
+const voiceDisplayNames={
+  F4:'Jane',
+  F5:'Ivy',
+  F6:'Clara',
+  F7:'Sophie',
+  F10:'Luna',
+  M3:'Leo',
+  M5:'Miles',
+  M8:'James',
+  M9:'Noah',
+  M10:'Ethan'
+};
+
+function updateCounter(){
+  $('charCount').textContent=$('ctext').value.length;
+}
+function setAudioDockReady(isReady){
+  $('audioDock').classList.toggle('ready', isReady);
+}
+function formatTime(totalSeconds){
+  if(!Number.isFinite(totalSeconds) || totalSeconds < 0) return '0:00';
+  const mins=Math.floor(totalSeconds/60);
+  const secs=Math.floor(totalSeconds%60);
+  return `${mins}:${String(secs).padStart(2,'0')}`;
+}
+function updatePlayButton(){
+  const isPlaying=!$('audio').paused && !$('audio').ended;
+  $('playBtn').setAttribute('aria-label', isPlaying ? 'Pause audio' : 'Play audio');
+  $('playIcon').innerHTML=isPlaying
+    ? '<path d="M8 6.5h3.5v11H8zm4.5 0H16v11h-3.5z"/>'
+    : '<path d="M8 6.5v11l9-5.5z"/>';
+}
+function updatePlayerProgress(){
+  const audio=$('audio');
+  const current=audio.currentTime || 0;
+  const duration=audio.duration || 0;
+  const pct=duration ? (current/duration)*100 : 0;
+  $('currentTime').textContent=formatTime(current);
+  $('duration').textContent=formatTime(duration);
+  $('seek').value=String(pct);
+  $('seek').style.setProperty('--seek-fill', `${pct}%`);
+}
+function setPlayerMeta(text){
+  const clean=text.trim() || 'Untitled';
+  $('playerTitle').textContent=clean.length>48 ? `${clean.slice(0,45)}...` : clean;
+  $('playerSubtitle').textContent=`Generation ${generationCount}`;
+}
+function initPlayer(){
+  const audio=$('audio');
+  $('playBtn').addEventListener('click',()=>{
+    if(!audio.src) return;
+    if(audio.paused) audio.play();
+    else audio.pause();
+  });
+  $('back10Btn').addEventListener('click',()=>{ audio.currentTime=Math.max(0,(audio.currentTime||0)-10); });
+  $('forward10Btn').addEventListener('click',()=>{ audio.currentTime=Math.min(audio.duration||Infinity,(audio.currentTime||0)+10); });
+  $('seek').addEventListener('input',()=>{
+    const duration=audio.duration || 0;
+    const pct=+$('seek').value;
+    $('seek').style.setProperty('--seek-fill', `${pct}%`);
+    if(duration) audio.currentTime=(pct/100)*duration;
+  });
+  ['play','pause','ended'].forEach(ev=>audio.addEventListener(ev,updatePlayButton));
+  ['timeupdate','loadedmetadata','durationchange'].forEach(ev=>audio.addEventListener(ev,updatePlayerProgress));
+  audio.addEventListener('ended',()=>{ audio.currentTime=0; updatePlayerProgress(); });
+  updatePlayButton();
+  updatePlayerProgress();
+}
+function updateSliderLabel(){
+  const value=+$('intensity').value;
+  const pct=Math.round((value/4)*100);
+  $('ival').textContent=`${pct}%`;
+  $('intensity').style.setProperty('--range-fill', `${pct}%`);
+}
+function renderVoiceButtons(voices){
+  const list=$('voiceList');
+  list.innerHTML='';
+  voices.forEach((name, index)=>{
+    const meta=genderMeta(name);
+    const displayName=voiceDisplayNames[name] ?? name;
+    const btn=document.createElement('button');
+    btn.type='button';
+    btn.className='voice-pill';
+    btn.dataset.voice=name;
+    btn.setAttribute('aria-pressed','false');
+    btn.innerHTML=`${meta.icon}<div class="voice-copy"><strong>${displayName}</strong><span>${meta.label}</span></div>`;
+    btn.addEventListener('click',()=>{
+      $('voice').value=name;
+      syncVoiceButtons();
+    });
+    list.appendChild(btn);
+    if(index===0) $('voice').value=name;
+  });
+  syncVoiceButtons();
+}
+function syncVoiceButtons(){
+  document.querySelectorAll('.voice-pill').forEach(btn=>{
+    const active=btn.dataset.voice===$('voice').value;
+    btn.classList.toggle('active',active);
+    btn.setAttribute('aria-pressed',String(active));
+  });
+}
+function toggleTheme(){
+  document.body.classList.toggle('theme-night');
+}
+function buildTables(){
+  TC=new Float32Array(FB*N); TS=new Float32Array(FB*N);
+  for(let k=0;k<FB;k++){const b=k*N;for(let n=0;n<N;n++){const a=2*Math.PI*k*n/N;TC[b+n]=Math.cos(a);TS[b+n]=Math.sin(a);}}
+  WIN=new Float32Array(N); for(let n=0;n<N;n++) WIN[n]=0.5-0.5*Math.cos(2*Math.PI*n/N);
+}
+function istft(mag,phase,T){
+  const outlen=H*(T-1)+N, out=new Float32Array(outlen), ws=new Float32Array(outlen);
+  const re=new Float32Array(FB), im=new Float32Array(FB);
+  for(let f=0;f<T;f++){
+    for(let k=0;k<FB;k++){const m=mag[k*T+f],p=phase[k*T+f];re[k]=m*Math.cos(p);im[k]=m*Math.sin(p);}
+    const s=f*H;
+    for(let n=0;n<N;n++){
+      let acc=re[0]+re[FB-1]*((n&1)?-1:1);
+      for(let k=1;k<FB-1;k++){const b=k*N+n;acc+=2*(re[k]*TC[b]-im[k]*TS[b]);}
+      const y=(acc/N)*WIN[n];
+      out[s+n]+=y; ws[s+n]+=WIN[n]*WIN[n];
+    }
+  }
+  for(let i=0;i<outlen;i++) out[i]= ws[i]>1e-8? out[i]/ws[i]:0;
+  return out.slice(N>>1, outlen-(N>>1));
+}
+let GD=null, GP={}, GBUF={};
+const WGSL=`
+struct P { T2:u32, N:u32, FB:u32, H:u32, outlen:u32 };
+@group(0) @binding(0) var<storage,read> mag:array<f32>;
+@group(0) @binding(1) var<storage,read> phase:array<f32>;
+@group(0) @binding(2) var<storage,read_write> reim:array<f32>;
+@group(0) @binding(3) var<storage,read> tcos:array<f32>;
+@group(0) @binding(4) var<storage,read> tsin:array<f32>;
+@group(0) @binding(5) var<storage,read> win:array<f32>;
+@group(0) @binding(6) var<storage,read_write> frame:array<f32>;
+@group(0) @binding(7) var<storage,read_write> outp:array<f32>;
+@group(0) @binding(8) var<uniform> p:P;
+@compute @workgroup_size(64) fn reim_k(@builtin(global_invocation_id) g:vec3<u32>){
+  let i=g.x; if(i>=p.T2*p.FB){return;} let f=i/p.FB; let k=i%p.FB;
+  let m=mag[k*p.T2+f]; let ph=phase[k*p.T2+f];
+  reim[(f*p.FB+k)*2u]=m*cos(ph); reim[(f*p.FB+k)*2u+1u]=m*sin(ph);
+}
+@compute @workgroup_size(64) fn idft(@builtin(global_invocation_id) g:vec3<u32>){
+  let idx=g.x; if(idx>=p.T2*p.N){return;} let f=idx/p.N; let n=idx%p.N;
+  var acc=reim[(f*p.FB)*2u];
+  let sgn=select(1.0,-1.0,(n&1u)==1u);
+  acc=acc+reim[(f*p.FB+(p.FB-1u))*2u]*sgn;
+  for(var k=1u;k<p.FB-1u;k++){
+    let re=reim[(f*p.FB+k)*2u]; let im=reim[(f*p.FB+k)*2u+1u]; let b=k*p.N+n;
+    acc=acc+2.0*(re*tcos[b]-im*tsin[b]);
+  }
+  frame[idx]=(acc/f32(p.N))*win[n];
+}
+@compute @workgroup_size(64) fn ola(@builtin(global_invocation_id) g:vec3<u32>){
+  let q=g.x; if(q>=p.outlen){return;}
+  var lo:u32=0u; if(q+1u>p.N){ lo=(q+1u-p.N+p.H-1u)/p.H; }
+  let hi=q/p.H; var acc=0.0; var ws=0.0;
+  for(var f=lo;f<=hi;f++){ if(f<p.T2){ let n=q-f*p.H; acc=acc+frame[f*p.N+n]; ws=ws+win[n]*win[n]; } }
+  outp[q]=select(0.0,acc/ws,ws>1e-8);
+}`;
+async function initGPUistft(){
+  const ad=await navigator.gpu.requestAdapter(); GD=await ad.requestDevice();
+  const mod=GD.createShaderModule({code:WGSL});
+  const ents=[]; for(let i=0;i<8;i++) ents.push({binding:i,visibility:GPUShaderStage.COMPUTE,buffer:{type:i===2||i===6||i===7?'storage':'read-only-storage'}});
+  ents.push({binding:8,visibility:GPUShaderStage.COMPUTE,buffer:{type:'uniform'}});
+  GBUF.bgl=GD.createBindGroupLayout({entries:ents});
+  const pl=GD.createPipelineLayout({bindGroupLayouts:[GBUF.bgl]});
+  for(const e of ['reim_k','idft','ola']) GP[e]=GD.createComputePipeline({layout:pl,compute:{module:mod,entryPoint:e}});
+  const tcos=new Float32Array(FB*N), tsin=new Float32Array(FB*N), win=new Float32Array(N);
+  for(let n=0;n<N;n++) win[n]=0.5-0.5*Math.cos(2*Math.PI*n/N);
+  for(let k=0;k<FB;k++){const b=k*N;for(let n=0;n<N;n++){const a=2*Math.PI*k*n/N;tcos[b+n]=Math.cos(a);tsin[b+n]=Math.sin(a);}}
+  const mk=(arr,usage)=>{const b=GD.createBuffer({size:arr.byteLength,usage});GD.queue.writeBuffer(b,0,arr);return b;};
+  const ST=GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST;
+  GBUF.tcos=mk(tcos,ST); GBUF.tsin=mk(tsin,ST); GBUF.win=mk(win,ST);
+  const MT=512, MO=H*(MT-1)+N, SS=GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST|GPUBufferUsage.COPY_SRC;
+  GBUF.mag=GD.createBuffer({size:MT*FB*4,usage:SS}); GBUF.phase=GD.createBuffer({size:MT*FB*4,usage:SS});
+  GBUF.reim=GD.createBuffer({size:MT*FB*2*4,usage:SS}); GBUF.frame=GD.createBuffer({size:MT*N*4,usage:SS});
+  GBUF.out=GD.createBuffer({size:MO*4,usage:SS}); GBUF.rb=GD.createBuffer({size:MO*4,usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ});
+  GBUF.bp=GD.createBuffer({size:32,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST});
+  GBUF.bg=GD.createBindGroup({layout:GBUF.bgl,entries:[GBUF.mag,GBUF.phase,GBUF.reim,GBUF.tcos,GBUF.tsin,GBUF.win,GBUF.frame,GBUF.out,GBUF.bp].map((b,i)=>({binding:i,resource:{buffer:b}}))});
+  GBUF.MO=MO;
+}
+async function istftGPU(mag,phase,T2){
+  if(!GD) await initGPUistft();
+  const outlen=H*(T2-1)+N;
+  GD.queue.writeBuffer(GBUF.mag,0,mag); GD.queue.writeBuffer(GBUF.phase,0,phase);
+  GD.queue.writeBuffer(GBUF.bp,0,new Uint32Array([T2,N,FB,H,outlen]));
+  const enc=GD.createCommandEncoder();
+  const pass=(pl,nthreads)=>{const p=enc.beginComputePass();p.setPipeline(GP[pl]);p.setBindGroup(0,GBUF.bg);p.dispatchWorkgroups(Math.ceil(nthreads/64));p.end();};
+  pass('reim_k',T2*FB); pass('idft',T2*N); pass('ola',outlen);
+  enc.copyBufferToBuffer(GBUF.out,0,GBUF.rb,0,outlen*4);
+  const _c0=performance.now(); GD.queue.submit([enc.finish()]); await GD.queue.onSubmittedWorkDone();
+  const _c1=performance.now(); await GBUF.rb.mapAsync(GPUMapMode.READ,0,outlen*4);
+  const full=new Float32Array(GBUF.rb.getMappedRange(0,outlen*4)).slice(); GBUF.rb.unmap();
+  console.log(`istft split: compute ${(_c1-_c0).toFixed(0)}ms  readback ${(performance.now()-_c1).toFixed(0)}ms`);
+  return full.slice(N>>1, outlen-(N>>1));
+}
+function expand(h, C, Nx, dur){
+  const out2=new Float32Array(C*dur.reduce((sum,d)=>sum+d,0));
+  for(let c=0;c<C;c++){let o=0;for(let i=0;i<Nx;i++){const v=h[c*Nx+i];for(let d=0;d<dur[i];d++){out2[c*(out2.length/C)+o]=v;o++;}}}
+  return {data:out2,T:out2.length/C};
+}
+async function init(){
+  try{
+    initPlayer();
+    $('themeBtn').addEventListener('click',toggleTheme);
+    $('aboutBtn').addEventListener('click',()=>{
+      setS('12.4M on-device TTS running fully in-browser on WebGPU. Pick a voice, choose an emotion, and generate speech locally.');
+    });
+    $('ctext').addEventListener('input',updateCounter);
+    $('intensity').addEventListener('input',updateSliderLabel);
+    updateCounter();
+    updateSliderLabel();
+    setAudioDockReady(false);
+    if(!navigator.gpu){setS('<span class="warn">WebGPU not available.</span> Use Chrome or Edge with WebGPU enabled.');return;}
+    setS('Loading assets and phonemizer...');
+    A=await (await fetch('assets/assets.json')).json();
+    await loadG2P();
+    const voices=Object.keys(A.voices);
+    const vsel=$('voice');
+    voices.forEach(name=>{const o=document.createElement('option');o.value=name;o.textContent=voiceDisplayNames[name] ?? name;vsel.appendChild(o);});
+    renderVoiceButtons(voices);
+    const ss=$('sent');
+    A.sents.forEach((s,i)=>{const o=document.createElement('option');o.value=i;o.textContent=s.text;ss.appendChild(o);});
+    ss.value='0';
+    const es=$('emo');
+    Object.keys(A.emos).forEach(e=>{const o=document.createElement('option');o.value=e;o.textContent=e[0].toUpperCase()+e.slice(1);es.appendChild(o);});
+    es.value='neutral';
+    es.addEventListener('change',()=>{
+      if(es.value==='neutral') $('intensity').value='2';
+      else $('intensity').value=String(A.emos[es.value].w ?? 2);
+      updateSliderLabel();
+    });
+    buildTables();
+    setS('Compiling models on WebGPU. First load takes around 10 seconds...');
+    const opt={executionProviders:['webgpu'],graphOptimizationLevel:'all'};
+    S.enc=await ort.InferenceSession.create('models/enc_emo.onnx',opt);
+    S.cfm=await ort.InferenceSession.create('models/cfm_emo_1nfe.onnx',opt);
+    S.dec=await ort.InferenceSession.create('models/decmp.onnx',opt);
+    setS('<span class="ok">Ready.</span> Enter text and press Generate.');
+    $('go').disabled=false; $('go').textContent='Generate';
+  }catch(e){setS('<span class="warn">Init failed:</span> '+e.message);}
+}
+async function gen(){
+  $('go').disabled=true; $('go').textContent='Generating...'; const t0=performance.now();
+  try{
+    const pid=$('voice').value, si=+$('sent').value;
+    const spk=new ort.Tensor('float32',Float32Array.from(A.voices[pid]),[1,192]);
+    const encspk=new ort.Tensor('float32',Float32Array.from(A.enc_ref),[1,192]);
+    const emoName=$('emo').value, scale=+$('intensity').value;
+    const useEmo = emoName!=='neutral' && scale>0;
+    const vraw=A.emos[emoName].vec;
+    const vadArr = useEmo ? Float32Array.from(vraw.map(z=>z*scale)) : Float32Array.from([0,0,0]);
+    const vadT=new ort.Tensor('float32',vadArr,[1,3]);
+    const custom=$('ctext').value.trim();
+    let PH,TO;
+    if(custom){ const r=g2pJS(custom); PH=r.ph; TO=r.to; }
+    else { const S0=A.sents[si]; PH=S0.ph; TO=S0.to; }
+    const Nx=PH.length;
+    const ph=new ort.Tensor('int64',BigInt64Array.from(PH.map(BigInt)),[1,Nx]);
+    const to=new ort.Tensor('int64',BigInt64Array.from(TO.map(BigInt)),[1,Nx]);
+    const tk=[]; const mk=l=>tk.push([l,performance.now()]); mk('start');
+    setS('Encoding text...');
+    const eo=await S.enc.run({ph,to,spk:encspk,vad:vadT}); mk('enc');
+    const h=eo.h.data, C=eo.h.dims[1], logdur=eo.logdur.data;
+    const dur=Array.from(logdur,x=>Math.max(1,Math.round(Math.exp(x)-1)));
+    const {data:cond,T}=expand(h,C,Nx,dur); mk('expand');
+    setS(`Generating speech${useEmo?` with ${emoName} emotion`:''}...`);
+    const x0=new Float32Array(48*T); for(let i=0;i<x0.length;i++){let u=0;for(let j=0;j<3;j++)u+=Math.random();x0[i]=(u-1.5)*1.6;}
+    const co=await S.cfm.run({x0:new ort.Tensor('float32',x0,[1,48,T]),cond:new ort.Tensor('float32',cond,[1,C,T]),spk,vad:vadT});
+    mk('cfm'); const lat=co.latent.data;
+    setS('Decoding audio...');
+    const do_=await S.dec.run({z:new ort.Tensor('float32',lat,[1,48,T])}); mk('decmp');
+    const mag=do_.mag.data, phase=do_.phase.data, T2=do_.mag.dims[2];
+    const wav=await istftGPU(mag,phase,T2); mk('istft');
+    const len=wav.length; const ab=new ArrayBuffer(44+len*2),dv=new DataView(ab);
+    const ws=(o,s)=>{for(let i=0;i<s.length;i++)dv.setUint8(o+i,s.charCodeAt(i))};
+    ws(0,'RIFF');dv.setUint32(4,36+len*2,true);ws(8,'WAVE');ws(12,'fmt ');dv.setUint32(16,16,true);dv.setUint16(20,1,true);dv.setUint16(22,1,true);dv.setUint32(24,A.meta.sr,true);dv.setUint32(28,A.meta.sr*2,true);dv.setUint16(32,2,true);dv.setUint16(34,16,true);ws(36,'data');dv.setUint32(40,len*2,true);
+    let o=44;for(let i=0;i<len;i++){let x=Math.max(-1,Math.min(1,wav[i]));dv.setInt16(o,x*32767,true);o+=2;}
+    mk('encode');
+    generationCount+=1;
+    setPlayerMeta(custom || A.sents[si].text);
+    $('audio').src=URL.createObjectURL(new Blob([ab],{type:'audio/wav'}));
+    setAudioDockReady(true);
+    $('audio').play();
+    const dt=(performance.now()-t0)/1000, adur=wav.length/A.meta.sr;
+    let br=''; for(let i=1;i<tk.length;i++) br+=` ${tk[i][0]} ${(tk[i][1]-tk[i-1][1]).toFixed(0)}ms`;
+    console.log('timing:'+br);
+    setS(`<span class="ok">Done.</span> ${adur.toFixed(1)}s in ${dt.toFixed(2)}s (${(adur/dt).toFixed(1)}x realtime)`);
+  }catch(e){setS('<span class="warn">Error:</span> '+e.message+'\\n'+e.stack);}
+  $('go').disabled=false;
+  $('go').textContent='Generate';
+}
+$('go').addEventListener('click',gen);
+init();
+</script></body></html>
