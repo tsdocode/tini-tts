@@ -1,7 +1,6 @@
 # On-device English TTS — WebGPU demo
 
 A 13.9M teacher-free TTS running **entirely in the browser** on WebGPU (onnxruntime-web).
-Single-step (1-NFE) generation, IntMeanFlow-distilled from the 24-step model. No server.
 
 ## Run
 ```bash
@@ -33,4 +32,3 @@ expansion + CMUdict lookup (`assets/cmudict.json`, 129k words) → the exact Mel
 letter-to-sound fallback for out-of-dictionary words. The CMUdict path is validated bit-exact vs the Python
 `clean_text(text,"EN")`. So the whole thing — g2p + neural TTS + iSTFT — is fully client-side.
 - **int8 quantize** the .onnx (`onnxruntime.quantization.quantize_dynamic`) to ship ~14MB and cache in-browser.
-- Model files: exported from `models/en_selfalign_d48_1nfe.pt` (see `stage3/distill_meanflow.py`).
