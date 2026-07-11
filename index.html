@@ -425,6 +425,17 @@ import * as ort from 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/o
 import { loadG2P, g2pJS } from './g2p.js';
 const $=id=>document.getElementById(id);
 const setS=(h)=>{$('status').innerHTML=h;};
+function withTimeout(promise, ms, label){
+  return Promise.race([
+    promise,
+    new Promise((_, reject)=>setTimeout(()=>reject(new Error(`${label} timed out after ${Math.round(ms/1000)}s`)), ms))
+  ]);
+}
+function remainingTime(deadlineAt, label){
+  const ms=Math.max(0, deadlineAt-performance.now());
+  if(ms===0) throw new Error(`${label} timed out after 10s`);
+  return ms;
+}
 let A=null, S={};
 const N=1920, H=480, FB=961;
 let TC=null,TS=null,WIN=null;
@@ -768,14 +779,20 @@ async function init(){
       updateSliderLabel();
     });
     buildTables();
-    setS('Compiling models on WebGPU. First load takes around 10 seconds...');
+    setS('Compiling models on WebGPU. Waiting up to 10 seconds...');
     const opt={executionProviders:['webgpu'],graphOptimizationLevel:'all'};
-    S.enc=await ort.InferenceSession.create('models/enc_emo.onnx',opt);
-    S.cfm=await ort.InferenceSession.create('models/cfm_emo_1nfe.onnx',opt);
-    S.dec=await ort.InferenceSession.create('models/decmp.onnx',opt);
+    const initDeadlineAt=performance.now()+10000;
+    S.enc=await withTimeout(ort.InferenceSession.create('models/enc_emo.onnx',opt),remainingTime(initDeadlineAt,'Encoder load'),'Encoder load');
+    S.cfm=await withTimeout(ort.InferenceSession.create('models/cfm_emo_1nfe.onnx',opt),remainingTime(initDeadlineAt,'Flow model load'),'Flow model load');
+    S.dec=await withTimeout(ort.InferenceSession.create('models/decmp.onnx',opt),remainingTime(initDeadlineAt,'Decoder load'),'Decoder load');
     setS('<span class="ok">Ready.</span> Enter text and press Generate.');
     $('go').disabled=false; $('go').textContent='Generate';
-  }catch(e){setS('<span class="warn">Init failed:</span> '+e.message);}
+  }catch(e){
+    const msg=e?.message?.includes('timed out after 10s')
+      ? 'Model initialization exceeded 10 seconds. Refresh and try again, or check WebGPU performance on this device.'
+      : e.message;
+    setS('<span class="warn">Init failed:</span> '+msg);
+  }
 }
 async function gen(){
   $('go').disabled=true; $('go').textContent='Generating...'; const t0=performance.now();
